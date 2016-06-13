@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<head>
+	<!--
+			Автор:				Иван Александров Иванов
+			ФН:						45123
+			Специалност: 	Информатика
+			Група:				3
+			Курс:					2
+
+			Прочел съм K44!
+	-->
+	<meta charset="utf-8"/>
+	<meta name="description" content="Project for the geometry course in the Faculty of mathematics and informatics"/>
+	<meta name="keywords" content="HTML, CSS, Javascript, js, mecho, mechanical objects, geometry, FMI, Sofia University" />
+	<meta name="author" content="Ivan Aleksandrov Ivanov, fn.45123" />
+	<link rel="stylesheet" type="text/css" href="style/mecho.css">
+	<script src="libs/mecho.min.js"></script>
+
+	<script>
+	var i = 1;
+	var stopHeight = false;
+	var stopArrow = false;
+	var stopSlider = false;
+	var lastSliderPoint = 0.7;
+		function main()
+		{
+			// Осовни настройки на сцената
+			scene = new Mecho();
+			// За повече реализъм настилката е асфалтова, а не дървена или златна
+			scene.ground = Mecho.ASPHALT;
+			scene.onTime = animate;
+			scene.target = [0,-5,9];
+			scene.sky = [0.5,0.5,0.9];
+			//scene.onTime =
+			// Основата на крана. Здрава основа. Good.
+			b = box([0,0,0],5,7, 1);
+			b.material = Mecho.INDUSTRIAL;
+			b.tiles = 1;
+
+			//Най-голямата метална основа на тялото. Неподвижна и прикрепена към основата.
+			g1 = pillar(b.otherPoint, 7,1,0.3);
+			g1.material = Mecho.METAL;
+			g1.tiles = 1;
+
+			// Средната основа на тялото. С времето се движи по синусоида нагоре надолу
+			// Синусоида, защото в двата края има забавяне, а това е от съществено
+			// значение за обект от реалния свят като крана, иначе ще се получи огромно
+			// напрежение в сглобките му и ще се счупи :(
+			g2 = tube(g1.otherPoint, 5, 0.8);
+			g2.material = Mecho.METAL;
+			g2.tiles = 1;
+
+			// Третата, най-горна, основа на тялото. За нея е закрепена стрелата и тежестта
+			g3 = tube(g2.otherPoint, 2, 0.5);
+			g3.material = Mecho.METAL;
+
+			// Върхът на крана. Златно е, защото кранът принадлежи на арабски принц!!!
+			shapka = pillar(g3.otherPoint, 0.6, 0.2, 0.85,0.5);
+			shapka.material = Mecho.GOLD;
+			shapka.tiles = 1;
+
+			// Изглежда готино
+			d = disk([0,0,0], 0.8, 0.2);
+			d.parent = shapka;
+			d.material = Mecho.GOLD;
+			//Стрелата на крана. С времето се върти, отново по сунусиода, за да има
+			//забавяне в двата края
+			strela = beam(g3.otherPoint, 9, 0.2);
+			strela.material = Mecho.METAL;
+			strela.tiles = 1;
+
+			// Тежест, за да балансира стрелата
+			tejest = beam(g3.otherPoint, 3,0.5);
+			tejest.material = Mecho.METAL;
+			tejest.rotS = 180;
+
+			// Плъзгач, който се движи по стрелата и за него е закачено въжето
+			plazgach = tube(strela.otherPoint, 0.5,0.5);
+			plazgach.material = Mecho.INDUSTRIAL;
+			plazgach.tiles = 1;
+
+			// Въжето, за което е закачена топката
+			rope = tube(plazgach.center, 9,0.02);
+			rope.material = Mecho.WOOD;
+			rope.centerOffset = [0,0,rope.height/2];
+
+			// Топката, с която се чупи (Like a Wrecking Ball)
+			topka = ball(rope.center, 0.6);
+			topka.centerOffset = [0,0,rope.height];
+			topka.material = Mecho.INDUSTRIAL;
+			topka.tiles = 1;
+
+			// Бутон за пускане и спиране на анимацията
+			button('random', 'Анимация', function (){
+				if(scene.onTime != animate){
+					scene.onTime = animate;
+				}else{
+					scene.onTime = null;
+				}
+			});
+
+			// Посока на въртене на стрелата
+			button('next', 'Посока', function(){
+				i = i* (-1);
+			});
+
+			// Застопоряване на височината
+			button('exit','Височина', function(){
+					stopHeight =!stopHeight;
+			});
+
+			// Застопоряване на стрелата
+			button('exit', 'Стрела', function(){
+				stopArrow = !stopArrow;
+			});
+
+			button('exit', 'Плъзгач', function(){
+				stopSlider = !stopSlider;
+			});
+}
+		function animate()
+		{
+			var t = Mecho.time;
+
+			// Движим средната част на тялото
+			if(stopHeight == false)
+				g2.centerOffset = [0,0,1.6*sin(t/2)];
+
+			// Горната част на тялото се движи заедно със средната
+			g3.center = g2.otherPoint;
+
+			// Върхът на крана, който е над стрелата и тежестта се движи заедно с
+			// най-горната част на тялото на крана
+			shapka.center = g3.otherPoint;
+
+			// Стрелата се движи заедно с горната част и в същото време се върти
+			strela.center = g3.otherPoint;
+			if(stopArrow == false)
+				strela.rotS = 180+i* 20*t;
+
+			// Тежест, върти се както се върти стрелата, но със 180 градуса разлика
+			// т.е. винаги ще са на една линия
+			tejest.center = g3.otherPoint;
+			if(stopArrow == false)
+				tejest.rotS = i*20*t
+
+			// Плъзгачът, върху който е закачено въжето се движи по стрелата
+			if(stopSlider == false){
+				lastSliderPoint = 0.7 + 0.2*sin(t*0.3);
+			}
+			plazgach.center = strela.atPoint(lastSliderPoint);
+
+			// С този "хак" правим така, че въжето да изглежда, че е закачено за
+			// плъзгача и се разтяга и свива само надолу. Всъщност се разтяга и свива
+			// в двете посоки, но заедно с това местим центъра му нагоре с половината
+			// от дължината, т.е. върхът винаги ще е на нивото на плъзгача
+			// Използвам Math.abs заради отрицателността на синуси, т.е. за да не
+			// може да се разшири дължината на въжето над 10 (напр. 10 - (-10) = 20)
+			rope.height = 10 - 9.5*Math.abs(sin(t*0.2)); //9,5, за да не може да влезе топката в плъзгача
+			rope.centerOffset = [0,0,rope.height/2];
+			rope.center = plazgach.center;
+
+			// Със сметки, подобни за тези за въжето правим така, че топката изглежда
+			// като закачена за най-долната част на въжето
+			topka.centerOffset = [0,0,rope.height];
+			topka.center = rope.center;
+		}
+	</script>
+</head>
+
+<body onload="main()">
+	<h1>Кран</h1>
+</body>
