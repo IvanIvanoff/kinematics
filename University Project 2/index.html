@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8"/>
+	<meta name="description" content="Geometry Project"/>
+	<meta name="author" content="Simona Dimitrova 45123" />
+	<link rel="stylesheet" type="text/css" href="css/mecho.css">
+	<script src="js/mecho.min.js"></script>
+
+	<script>
+		function main()
+		{
+			// Настройки на сцената
+			scene = new Mecho();
+			scene.ground = Mecho.METRIC;
+			scene.ground[0].color = [0.24,0.35,0.5];
+			scene.onTime = animate;
+			scene.target = [0,-4,7];
+			scene.sky = [0.4,0.8,0.8];
+
+			// Основата на купата на миксера
+			d = disk([0,0,0], 9,0.2);
+			d.material = Mecho.METAL;
+			d.tiles = 1;
+
+			// Стената на купата на миксера
+			stena = tube(d.center, 8, 9,0,9);
+			stena.material = Mecho.METAL;
+			stena.hollow = true;
+			stena.tiles = 1;
+
+			// Зъбно колело, за което са закачени* бъркалките
+			g1 = gear([0,0,10], 4,0.6,0,0.3);
+			g1.material = Mecho.METAL;
+			g1.tiles = 1;
+
+			// Върхът на тялото, към което е прикрепено зъбното колело
+			vryh = tube(g1.center, 2, 2);
+			vryh.material = Mecho.METAL;
+			vryh.tiles = 1;
+
+			// Тялото, което е закрепено към основата и към което е закрепено зъбното
+			// колело
+			tqlo = tube([0,0,0], 20, 1);
+			tqlo.material = Mecho.METAL;
+			tqlo.tiles = 1;
+
+			// Второ зъбно колело, което е невидимо
+			// Използвам го, за да мога да направя така, че бъркалките да изглеждат
+			// че се въртят около 1 зъбно колело. Второто зъбно колело се върти както
+			// първото, но с корекция от + 180.Така закачаме втората бъркалка на
+			// otherPoint на второто колело => диаметрално противоположна с първата
+			// * от предния коментар - втората бъркалка не е закачена за първото зъбно
+			// колело
+			g2 = gear(d.center, 4,0.6,0,0.3);
+			g2.centerOffset = [0,0,-10];
+			g2.visible = false;
+
+			// Бъркалка номер 1
+			t1 = tube(d.center, 10,0.3,0,0);
+			t1.centerOffset = [0,0,-5];
+			t1.material = Mecho.METAL;
+			t1.tiles = 1;
+
+			// Бъркалка номер 2
+			t2 = tube(d.center, 10,0.3,0,0);
+			t2.centerOffset = [0,0,-5];
+			t2.material = Mecho.METAL;
+			t2.tiles = 1;
+
+			// Бъркалка 1 аксесоар
+			r1 = rail([0,0,0], 0.8,0.4, 0.6, 0.4);
+			r1.rotV = 90;
+			r1.material = Mecho.INDUSTRIAL;
+
+			// Бъркалка номер 2 аксесоар
+			r2 = rail([0,0,0], 0.8, 0.4, 0.6, 0.4);
+			r2.rotV = 90;
+			r2.material = Mecho.INDUSTRIAL;
+
+
+			// Бутон за скриване и показване на стената, за да може по-ясно да се види
+			// движението
+			button('toggle', 'Стена', function (){
+				stena.visible = ! stena.visible;
+			});
+
+		}
+		function animate()
+		{
+			var t = Mecho.time;
+
+			// Въртим виждащото се зъбно колело
+			g1.rotS = 150*t;
+
+			// Въртим невидимото зъбно колело + корекция от 180, за да са срещуположни
+			// otherPoint на g1 и g2
+			g2.rotS = 180 +	150*t;
+
+			// Прикрепяме бъркалка 1 към otherPoint на първото зъбно колело
+			t1.center = g1.otherPoint;
+			t1.imageOffset = [0,0,-10];
+
+			// Движим аксесоара на първата бъркалка нагоре-надолу по нея и в същото време
+			// я ротираме с rotT, за по-разнообразно движение - така се размесва по-добре!
+			r1.center = t1.atPoint(0.4-0.3*sin(t*3));
+			r1.imageOffset = [-15,0,0];
+			r1.rotT = 150*sin(10*t);
+
+			// Прикрепяме бъркалка 2 към otherPoint на невидимото зъбно колело. Винаги
+			// ще се намира диаметрално противоположно на първата бъркалка
+			t2.center = g2.otherPoint;
+			t2.imageOffset = [0,0,-10];
+
+			// Движим аксесоара на втората бъркалка нагоре-надолу по нея и в същото време
+			// я ротираме с rotT, за по-разнообразно движение - така се размесва по-добре!
+			r2.center = t2.atPoint(0.4-0.3*sin(90+ t*3))
+			r2.imageOffset = [-15,0,0];
+			r2.rotT = 150*sin(10*t);
+		}
+	</script>
+</head>
+
+<body onload="main()">
+	<h1>Миксер</h1>
+</body>
+
+</html>
